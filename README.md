@@ -1,13 +1,9 @@
-# python_template
-[![pypi](https://img.shields.io/pypi/v/python_template.svg)](https://pypi.python.org/pypi/python_template)
-[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/rom1504/python_template/blob/master/notebook/python_template_getting_started.ipynb)
-[![Try it on gitpod](https://img.shields.io/badge/try-on%20gitpod-brightgreen.svg)](https://gitpod.io/#https://github.com/rom1504/python_template)
-
-A nice template to start with
+# Dataset Inference
+This repository is developed for distributed inference.
 
 ## Install
 
-pip install python_template
+pip install dataset_inference
 
 ## Python examples
 
@@ -16,13 +12,15 @@ Checkout these examples to call this as a lib:
 
 ## API
 
-This module exposes a single function `hello_world` which takes the same arguments as the command line tool:
+This module exposes a single function `dataset_inference` which takes the same arguments as the command line tool:
 
-* **message** the message to print. (*required*)
+* **dataset** the dataset to run inference on. (*required*)
+* **models** the models to run inference on. (*required*)
+* **output** the output folder / cloud storage to save data. (*required*)
 
 ## For development
 
-Either locally, or in [gitpod](https://gitpod.io/#https://github.com/rom1504/python_template) (do `export PIP_USER=false` there)
+Either locally, or in [gitpod](https://gitpod.io/#https://github.com/LAION-AI/dataset-inference) (do `export PIP_USER=false` there)
 
 Setup a virtualenv:
 
