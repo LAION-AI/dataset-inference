@@ -1,3 +1,3 @@
-from python_template import hello_world
+from dataset_inference import run_inference
 
-hello_world("hi")
+run_inference()

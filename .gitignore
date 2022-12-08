@@ -8,3 +8,7 @@ __pycache__
 wandb
 *.pex
 .pexing
+logs
+cache
+.github
+output
