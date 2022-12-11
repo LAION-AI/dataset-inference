@@ -65,6 +65,7 @@ def worker(current_shard):
             all_data[key] = []
 
         inference_data = []
+        image_embeddings = []
         
         for b in tqdm(dl, total=int(9540/bs) + 1):
             ###########################################################
@@ -75,7 +76,9 @@ def worker(current_shard):
             # inference_data.extend(inference_on_batch_col(b['jpg']))
 
             ### Clip H example
-            inference_data.extend(inference_on_batch_col(b['jpg']))
+            scores, image_features = inference_on_batch_col(b['jpg'])
+            inference_data.extend(scores)
+            image_embeddings.extend(image_features)
 
             ###########################################################
             ###########################################################
@@ -87,22 +90,29 @@ def worker(current_shard):
         df = pd.DataFrame(all_data)
         df.to_parquet(f'{target_path}/{current_shard:06d}.parquet')
 
-        with open(f'{output_path}/{current_shard:06d}.npy', "wb") as f:
+        with open(f'{output_path}/{current_shard:06d}_scores.npy', "wb") as f:
             npb = BytesIO()
             np.save(npb, np.asanyarray(inference_data))
+            f.write(npb.getbuffer())
+
+        with open(f'{output_path}/{current_shard:06d}_image_emb.npy', "wb") as f:
+            npb = BytesIO()
+            np.save(npb, np.asanyarray(image_embeddings))
             f.write(npb.getbuffer())
 
 
         if benchmark == True:
             print("###########################################################################")
-            print(f"Processing one shard with {len(inference_data)} took {time() - start_time:.2f}s.")
+            print(f"Processing one shard with {len(inference_data)} samples took {time() - start_time:.2f}s.")
             print(f"Estimated time for 2B rows: {((time() - start_time)/len(inference_data)*2000000000)/(60*60*24):.2f} days.")
             print("###########################################################################")
         
-        subprocess.run(["aws", "s3" , "cp", f'{output_path}/{current_shard:06d}.npy', f"{target_path}/{current_shard:06d}.npy"])
+        subprocess.run(["aws", "s3" , "cp", f'{output_path}/{current_shard:06d}_scores.npy', f"{target_path}/{current_shard:06d}_scores.npy"])
+        subprocess.run(["aws", "s3" , "cp", f'{output_path}/{current_shard:06d}_image_emb.npy', f"{target_path}/{current_shard:06d}_image_emb.npy"])
 
         try:
-            os.remove(f'{output_path}/{current_shard:06d}.npy')
+            os.remove(f'{output_path}/{current_shard:06d}_scores.npy')
+            os.remove(f'{output_path}/{current_shard:06d}_image_emb.npy')
         except:
             print(e)
 

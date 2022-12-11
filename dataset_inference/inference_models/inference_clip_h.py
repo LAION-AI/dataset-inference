@@ -60,8 +60,9 @@ def inference_on_batch_col(b_col):
         text_features /= text_features.norm(dim=-1, keepdim=True)
 
         text_probs = (100.0 * image_features @ text_features.T).softmax(dim=-1).cpu().numpy()
+        ouput_image_features = image_features.cpu().numpy()
 
-        return text_probs
+        return text_probs, ouput_image_features
 
 ### Test run
 # inference_on_batch_col(b['jpg'])
