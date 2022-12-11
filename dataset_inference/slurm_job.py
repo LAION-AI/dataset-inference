@@ -18,7 +18,7 @@ from time import time
 from tqdm import tqdm
 
 from inference_models.inference_mobilenetv3 import inference_on_batch_col
-from inference_models.inference_clip_h import preprocopenclip224, inference_on_batch_col
+from inference_models.inference_clip_l import preprocopenclip224, inference_on_batch_col
 
 def decodebyte(x):
     return Image.open(io.BytesIO(x)).convert("RGB")
@@ -57,7 +57,7 @@ def worker(current_shard):
 
         dl = DataLoader(ds, num_workers=2, batch_size=bs, pin_memory=True, shuffle=False)
 
-        if benchmark == True:
+        if benchmark:
             start_time = time()
 
         all_data = {}
@@ -75,7 +75,7 @@ def worker(current_shard):
             ### MobilenetV3 example
             # inference_data.extend(inference_on_batch_col(b['jpg']))
 
-            ### Clip H example
+            ### Clip L-14 example
             scores, image_features = inference_on_batch_col(b['jpg'])
             inference_data.extend(scores)
             image_embeddings.extend(image_features)
@@ -86,6 +86,12 @@ def worker(current_shard):
 
             for key in keep_cols:
                 all_data[key].extend(b[key])
+
+        if benchmark:
+            print("###########################################################################")
+            print(f"Inference only on one shard with {len(inference_data)} samples took {time() - start_time:.2f}s.")
+            print(f"Estimated time for 2B rows: {((time() - start_time)/len(inference_data)*2000000000)/(60*60*24):.2f} days.")
+            print("###########################################################################")
 
         df = pd.DataFrame(all_data)
         df.to_parquet(f'{target_path}/{current_shard:06d}.parquet')
@@ -101,7 +107,7 @@ def worker(current_shard):
             f.write(npb.getbuffer())
 
 
-        if benchmark == True:
+        if benchmark:
             print("###########################################################################")
             print(f"Processing one shard with {len(inference_data)} samples took {time() - start_time:.2f}s.")
             print(f"Estimated time for 2B rows: {((time() - start_time)/len(inference_data)*2000000000)/(60*60*24):.2f} days.")

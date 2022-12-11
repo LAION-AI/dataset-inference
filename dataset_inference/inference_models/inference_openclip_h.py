@@ -42,22 +42,14 @@ model, _, preprocess = open_clip.create_model_and_transforms('ViT-H-14', pretrai
 tokenizer = open_clip.get_tokenizer('ViT-H-14')
 
 text = tokenizer(text_list_for_similarity_comparison).to(device)
-
-# ds = wds.WebDataset("000000.tar", handler=wds.ignore_and_continue).map_dict(jpg = preprocopenclip224)
-# # ds = wds.WebDataset("000000.tar")
-# dl = DataLoader(ds, batch_size=2)
-# b = next(iter(dl))
-# print(len(b))
+text_features = model.encode_text(text)
+text_features /= text_features.norm(dim=-1, keepdim=True)
 
 ### Inference code
 def inference_on_batch_col(b_col):
-    # image = preprocess(b_col).unsqueeze(0)
-
     with torch.no_grad(), torch.cuda.amp.autocast():
         image_features = model.encode_image(b_col.to(device))
-        text_features = model.encode_text(text)
         image_features /= image_features.norm(dim=-1, keepdim=True)
-        text_features /= text_features.norm(dim=-1, keepdim=True)
 
         text_probs = (100.0 * image_features @ text_features.T).softmax(dim=-1).cpu().numpy()
         ouput_image_features = image_features.cpu().numpy()
