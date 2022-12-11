@@ -12,3 +12,11 @@ logs
 cache
 .github
 output
+error_logs.txt
+000000.tar
+.pylintrc
+slurm_job_copy.py
+test.py
+000000.npy
+dog.jpg
+dataset_inference/inference_models/inference_clip_h copy.py

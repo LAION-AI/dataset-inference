@@ -1,0 +1,13 @@
+fire
+wheel
+webdataset
+pandas
+torch
+torchvision
+fastparquet
+s3fs
+awscli
+boto3
+
+transformers
+open_clip
