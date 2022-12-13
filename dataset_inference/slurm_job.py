@@ -17,8 +17,12 @@ import torch
 from time import time
 from tqdm import tqdm
 
-from inference_models.inference_mobilenetv3 import inference_on_batch_col
-from inference_models.inference_clip_l import preprocopenclip224, inference_on_batch_col
+# from inference_models.inference_mobilenetv3 import inference_on_batch_col
+# from inference_models.inference_clip_l import preprocopenclip224, inference_on_batch_col
+from inference_models.inference_detoxify import inference_on_batch_col
+
+def preproctxt(txt):
+  return txt.decode('utf-8')
 
 def decodebyte(x):
     return Image.open(io.BytesIO(x)).convert("RGB")
@@ -49,7 +53,10 @@ def worker(current_shard):
         # )
         
         ### Clip H example
-        ds = wds.WebDataset(dataset_url, handler=wds.ignore_and_continue).map_dict(jpg = preprocopenclip224)
+        # ds = wds.WebDataset(dataset_url, handler=wds.ignore_and_continue).map_dict(jpg = preprocopenclip224)
+
+        ### Detoxify example
+        ds = wds.WebDataset(dataset_url, handler=wds.ignore_and_continue).map_dict(txt = preproctxt)
 
         ##############################################################
         ##############################################################
@@ -76,9 +83,13 @@ def worker(current_shard):
             # inference_data.extend(inference_on_batch_col(b['jpg']))
 
             ### Clip L-14 example
-            scores, image_features = inference_on_batch_col(b['jpg'])
+            # scores, image_features = inference_on_batch_col(b['jpg'])
+            # inference_data.extend(scores)
+            # image_embeddings.extend(image_features)
+
+            ### Detoxify
+            scores = inference_on_batch_col(b['txt'])
             inference_data.extend(scores)
-            image_embeddings.extend(image_features)
 
             ###########################################################
             ###########################################################
@@ -101,10 +112,10 @@ def worker(current_shard):
             np.save(npb, np.asanyarray(inference_data))
             f.write(npb.getbuffer())
 
-        with open(f'{output_path}/{current_shard:06d}_image_emb.npy', "wb") as f:
-            npb = BytesIO()
-            np.save(npb, np.asanyarray(image_embeddings))
-            f.write(npb.getbuffer())
+        # with open(f'{output_path}/{current_shard:06d}_image_emb.npy', "wb") as f:
+        #     npb = BytesIO()
+        #     np.save(npb, np.asanyarray(image_embeddings))
+        #     f.write(npb.getbuffer())
 
 
         if benchmark:
@@ -114,12 +125,12 @@ def worker(current_shard):
             print("###########################################################################")
         
         subprocess.run(["aws", "s3" , "cp", f'{output_path}/{current_shard:06d}_scores.npy', f"{target_path}/{current_shard:06d}_scores.npy"])
-        subprocess.run(["aws", "s3" , "cp", f'{output_path}/{current_shard:06d}_image_emb.npy', f"{target_path}/{current_shard:06d}_image_emb.npy"])
+        # subprocess.run(["aws", "s3" , "cp", f'{output_path}/{current_shard:06d}_image_emb.npy', f"{target_path}/{current_shard:06d}_image_emb.npy"])
 
         try:
             os.remove(f'{output_path}/{current_shard:06d}_scores.npy')
-            os.remove(f'{output_path}/{current_shard:06d}_image_emb.npy')
-        except:
+            # os.remove(f'{output_path}/{current_shard:06d}_image_emb.npy')
+        except Exception as e:
             print(e)
 
     except Exception as e:
