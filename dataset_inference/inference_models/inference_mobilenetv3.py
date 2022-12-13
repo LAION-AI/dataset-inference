@@ -12,15 +12,15 @@ device = "cuda" if torch.cuda.is_available() else "cpu"
 def decodebyte(x):
     return Image.open(io.BytesIO(x)).convert("RGB")
 
-transform = Compose([
+
+transform = Compose(
+    [
         Resize((224, 224)),
         CenterCrop(224),
         ToTensor(),
-        Normalize(
-            mean=[0.485, 0.456, 0.406],
-            std=[0.229, 0.224, 0.225]
-        ),
-])
+        Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
+    ]
+)
 
 ### Inference code
 def inference_on_batch_col(b_col):
@@ -29,9 +29,7 @@ def inference_on_batch_col(b_col):
         if torch.cuda.is_available():
             model.cuda()
 
-        mobilenet_gap_op = torch.nn.Sequential(
-            model.features, model.avgpool
-        )
+        mobilenet_gap_op = torch.nn.Sequential(model.features, model.avgpool)
 
         image_features = mobilenet_gap_op(b_col.to(device))
         return image_features.cpu().numpy()

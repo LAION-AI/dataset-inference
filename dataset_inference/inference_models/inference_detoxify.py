@@ -1,5 +1,6 @@
 # from detoxify import Detoxify
 from time import time
+
 # # each model takes in either a string or a list of strings
 
 # results = Detoxify('unbiased').predict('example text')
@@ -11,9 +12,9 @@ from detoxify import Detoxify
 import torch
 
 device = "cuda" if torch.cuda.is_available() else "cpu"
-detoxify_original = Detoxify('original', device=device)
-detoxify_unbiased = Detoxify('unbiased', device=device)
-detoxify_multilingual = Detoxify('multilingual', device=device)
+detoxify_original = Detoxify("original", device=device)
+detoxify_unbiased = Detoxify("unbiased", device=device)
+detoxify_multilingual = Detoxify("multilingual", device=device)
 
 
 def inference_on_batch_col(b_col):
@@ -36,4 +37,5 @@ def inference_on_batch_col(b_col):
     # detox = list(map(list, zip(*detox_values)))
     # return detox
 
-print(inference_on_batch_col(['ABC']))
+
+print(inference_on_batch_col(["ABC"]))

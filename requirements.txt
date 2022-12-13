@@ -10,4 +10,4 @@ awscli
 boto3
 
 transformers
-open_clip
+open_clip_torch

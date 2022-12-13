@@ -19,4 +19,5 @@ slurm_job_copy.py
 test.py
 000000.npy
 dog.jpg
+.mypy_cache
 dataset_inference/inference_models/inference_clip_h copy.py

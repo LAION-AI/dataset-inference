@@ -1,7 +1,7 @@
 import pytest
-from python_template import hello_world
+from dataset_inference import run_inference
 
 
-@pytest.mark.parametrize("message", ["hello", "world"])
-def test_hello_world(message):
-    hello_world(message)
+@pytest.mark.parametrize()
+def test_run_inference():
+    run_inference()

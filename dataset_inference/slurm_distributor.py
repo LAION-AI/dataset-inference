@@ -2,6 +2,7 @@ import subprocess
 from config import comment, n_nodes, gpus, cpus_per_gpu
 import os
 
+
 def _start_job(sbatch_file):
     """start job"""
     args = ["sbatch"]
@@ -17,6 +18,7 @@ def _start_job(sbatch_file):
     job_id = parsed_sbatch[3].strip()
     return job_id
 
+
 def _run_job(sbatch_file):
     """
     Run a job and wait for it to finish.
@@ -29,14 +31,15 @@ def _run_job(sbatch_file):
     else:
         return job_id
 
-def _generate_sbatch(log_path, current_shard_number, job_name, ntasks_per_node):
-        """
-        Generate sbatch for a worker.
-        sbatch: allows you to specify a configuration and task in a file
-            - https://slurm.schedmd.com/sbatch.html
-        """
 
-        return f"""#!/bin/bash
+def _generate_sbatch(log_path, current_shard_number, job_name, ntasks_per_node):
+    """
+    Generate sbatch for a worker.
+    sbatch: allows you to specify a configuration and task in a file
+        - https://slurm.schedmd.com/sbatch.html
+    """
+
+    return f"""#!/bin/bash
 #SBATCH --job-name={job_name}
 #SBATCH --comment={comment}
 #SBATCH --nodes={n_nodes}
@@ -47,13 +50,18 @@ def _generate_sbatch(log_path, current_shard_number, job_name, ntasks_per_node):
 python3 slurm_job.py {current_shard_number}
 """
 
-def create_sbatch_and_run(cache_path, log_path, job_name, current_shard_number, ntasks_per_node):
+
+def create_sbatch_and_run(
+    cache_path, log_path, job_name, current_shard_number, ntasks_per_node
+):
     """
     Create a sbatch file, submit it to slurm, and wait for it to finish.
     """
 
     # make the filenames unique using the current timestamp
-    sbatch_script_path = os.path.join(cache_path, f"sbatch_script_{current_shard_number:06d}.sh")
+    sbatch_script_path = os.path.join(
+        cache_path, f"sbatch_script_{current_shard_number:06d}.sh"
+    )
 
     # save the file to the cache path
     with open(sbatch_script_path, "w", encoding="utf-8") as sbatch_file:
