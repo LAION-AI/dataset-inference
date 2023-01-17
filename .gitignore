@@ -2,6 +2,7 @@
 .vscode
 .env
 __pycache__
+.github
 .envtest
 .coverage*
 .env*
@@ -21,3 +22,6 @@ test.py
 dog.jpg
 .mypy_cache
 dataset_inference/inference_models/inference_clip_h copy.py
+test
+yolov7
+test_yolov7
