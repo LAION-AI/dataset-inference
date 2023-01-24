@@ -7,6 +7,7 @@ cache_path = "./cache"
 log_path = "./logs"
 output_path = "./output"
 target_path = "s3://s-laion/inference-test"
+npy_suffix = "_boxes"
 
 ## slurm configuration
 max_concurrent_processes = 2

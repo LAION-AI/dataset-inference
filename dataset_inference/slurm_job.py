@@ -8,6 +8,7 @@ from config import (
     benchmark,
     keep_cols,
     delete_batch_scripts_after_download,
+    npy_suffix
 )
 import os
 import subprocess
@@ -24,8 +25,9 @@ from tqdm import tqdm
 
 # from inference_models.inference_mobilenetv3 import inference_on_batch_col
 # from inference_models.inference_clip_l import preprocopenclip224, inference_on_batch_col
-from inference_models.inference_detoxify import inference_on_batch_col
-
+# from inference_models.inference_detoxify import inference_on_batch_col
+# from inference_models.inference_yolov7 import inference_on_batch_col
+from inference_models.inference_yolov8 import inference_on_batch_col
 
 def preproctxt(txt):
     return txt.decode("utf-8")
@@ -34,6 +36,8 @@ def preproctxt(txt):
 def decodebyte(x):
     return Image.open(io.BytesIO(x)).convert("RGB")
 
+def decodebyte_yolov8(x):
+    return np.array(Image.open(io.BytesIO(x)).convert("RGB"))
 
 transform = Compose(
     [
@@ -64,10 +68,23 @@ def worker(current_shard):
         # ds = wds.WebDataset(dataset_url, handler=wds.ignore_and_continue).map_dict(jpg = preprocopenclip224)
 
         ### Detoxify example
-        ds = wds.WebDataset(dataset_url, handler=wds.ignore_and_continue).map_dict(
-            txt=preproctxt
-        )
+        # ds = wds.WebDataset(dataset_url, handler=wds.ignore_and_continue).map_dict(
+        #     txt=preproctxt
+        # )
 
+        # ## Yolov7 example
+        # ds = (
+        #     wds
+        #     .WebDataset(dataset_url, handler=wds.warn_and_continue)
+        #     .map_dict(jpg=decodebyte)
+        # )
+
+        ## Yolov8 example
+        ds = (
+            wds
+            .WebDataset(dataset_url, handler=wds.warn_and_continue)
+            # .map_dict(jpg=decodebyte_yolov8)
+        )
         ##############################################################
         ##############################################################
         ###########################################################
@@ -82,6 +99,8 @@ def worker(current_shard):
         all_data = {}
         for key in keep_cols:
             all_data[key] = []
+            ### for json files as in yolov7
+            all_data['yolov8'] = [] 
 
         inference_data = []
         image_embeddings = []
@@ -100,9 +119,16 @@ def worker(current_shard):
             # image_embeddings.extend(image_features)
 
             ### Detoxify
-            scores = inference_on_batch_col(b["txt"])
-            inference_data.extend(scores)
+            # scores = inference_on_batch_col(b["txt"])
+            # inference_data.extend(scores)
 
+            ### Yolov7
+            # inference_data.extend(inference_on_batch_col(b['jpg']))
+            # all_data['yolov7'].extend(inference_on_batch_col(b['jpg']))
+
+            ### Yolov8
+            inference_data.extend(inference_on_batch_col(b['jpg']))
+            # all_data['yolov8'].extend(inference_on_batch_col(b['jpg']))
             ###########################################################
             ###########################################################
             ###########################################################
@@ -110,18 +136,21 @@ def worker(current_shard):
             for key in keep_cols:
                 all_data[key].extend(b[key])
 
+        processed_samples = len(all_data[keep_cols[0]])
+
         if benchmark:
             print(
-                f"Inference only on one shard with {len(inference_data)} samples took {time() - start_time:.2f}s."
+                f"Inference only on one shard with {processed_samples} samples took {time() - start_time:.2f}s."
             )
             print(
-                f"Estimated time for 2B rows: {((time() - start_time)/len(inference_data)*2000000000)/(60*60*24):.2f} days."
+                f"Estimated time for 2B rows: {((time() - start_time)/processed_samples*2000000000)/(60*60*24):.2f} days."
             )
 
         df = pd.DataFrame(all_data)
         df.to_parquet(f"{target_path}/{current_shard:06d}.parquet")
 
-        with open(f"{output_path}/{current_shard:06d}_scores.npy", "wb") as f:
+        ################ ONLY FOR EMBEDDINGS  / NUMPY ARRAYS ###################
+        with open(f"{output_path}/{current_shard:06d}{npy_suffix}.npy", "wb") as f:
             npb = BytesIO()
             np.save(npb, np.asanyarray(inference_data))
             f.write(npb.getbuffer())
@@ -133,10 +162,10 @@ def worker(current_shard):
 
         if benchmark:
             print(
-                f"Processing one shard with {len(inference_data)} samples took {time() - start_time:.2f}s."
+                f"Processing one shard with {processed_samples} samples took {time() - start_time:.2f}s."
             )
             print(
-                f"Estimated time for 2B rows: {((time() - start_time)/len(inference_data)*2000000000)/(60*60*24):.2f} days."
+                f"Estimated time for 2B rows: {((time() - start_time)/processed_samples*2000000000)/(60*60*24):.2f} days."
             )
 
         subprocess.run(
@@ -144,14 +173,27 @@ def worker(current_shard):
                 "aws",
                 "s3",
                 "cp",
-                f"{output_path}/{current_shard:06d}_scores.npy",
-                f"{target_path}/{current_shard:06d}_scores.npy",
+                f"{output_path}/{current_shard:06d}.parquet",
+                f"{target_path}/{current_shard:06d}.parquet",
             ]
         )
+
+        ################ ONLY FOR EMBEDDINGS  / NUMPY ARRAYS ###################
+        subprocess.run(
+            [
+                "aws",
+                "s3",
+                "cp",
+                f"{output_path}/{current_shard:06d}{npy_suffix}.npy",
+                f"{target_path}/{current_shard:06d}{npy_suffix}.npy",
+            ]
+        )
+
         # subprocess.run(["aws", "s3" , "cp", f'{output_path}/{current_shard:06d}_image_emb.npy', f"{target_path}/{current_shard:06d}_image_emb.npy"])
 
         try:
-            os.remove(f"{output_path}/{current_shard:06d}_scores.npy")
+            os.remove(f"{output_path}/{current_shard:06d}.parquet")
+            # os.remove(f"{output_path}/{current_shard:06d}{npy_suffix}.npy")
             # os.remove(f'{output_path}/{current_shard:06d}_image_emb.npy')
         except Exception as e:
             print(e)
