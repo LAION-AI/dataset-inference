@@ -25,5 +25,4 @@ dataset_inference/inference_models/inference_clip_h copy.py
 test
 yolov7
 test_yolov7
-dataset_inference/inference_models/inference_yolov8.py
 yolov8n.pt
