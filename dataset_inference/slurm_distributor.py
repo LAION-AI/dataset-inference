@@ -47,6 +47,7 @@ def _generate_sbatch(log_path, current_shard_number, job_name, ntasks_per_node):
 #SBATCH --cpus-per-gpu={cpus_per_gpu}
 #SBATCH --ntasks-per-node={ntasks_per_node}
 #SBATCH --output={log_path}/slurm-%x_%j.out
+source .env/bin/activate
 python3 slurm_job.py {current_shard_number}
 """
 

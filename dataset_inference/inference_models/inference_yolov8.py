@@ -28,6 +28,6 @@ def inference_on_batch_col(b_col):
         # images = np.asarray(b_col)
         images = [Image.open(BytesIO(image_bytes)).convert('RGB') for image_bytes in b_col]
         results = model.predict(images, device=device) # , verbose=True)        
-        results = [np.hstack((result.boxes.xyxyn, result.boxes.cls.reshape(-1, 1), result.boxes.conf.reshape(-1, 1))) for result in results]
+        results = [np.hstack((result.boxes.xyxyn, result.boxes.cls.reshape(-1, 1), result.boxes.conf.reshape(-1, 1))).astype(np.float16) for result in results]
 
         return results

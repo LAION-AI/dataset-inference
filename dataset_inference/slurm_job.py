@@ -48,9 +48,11 @@ transform = Compose(
     ]
 )
 
+step = 0
 
 def worker(current_shard):
     try:
+        step += 1
         bs = 256
         dataset_url = "pipe:aws s3 cp " + input_path + f"{current_shard:06d}.tar -"
         ##############################################################
@@ -92,18 +94,19 @@ def worker(current_shard):
         dl = DataLoader(
             ds, num_workers=2, batch_size=bs, pin_memory=True, shuffle=False
         )
-
+        step += 1
         if benchmark:
             start_time = time()
 
         all_data = {}
         for key in keep_cols:
             all_data[key] = []
-            ### for json files as in yolov7
-            all_data['yolov8'] = [] 
+            ### for json files as in yolov8
+            # all_data['yolov8'] = [] 
 
         inference_data = []
         image_embeddings = []
+        step += 1
 
         for b in tqdm(dl, total=int(9540 / bs) + 1):
             ###########################################################
@@ -145,10 +148,10 @@ def worker(current_shard):
             print(
                 f"Estimated time for 2B rows: {((time() - start_time)/processed_samples*2000000000)/(60*60*24):.2f} days."
             )
-
+        step += 1
         df = pd.DataFrame(all_data)
-        df.to_parquet(f"{target_path}/{current_shard:06d}.parquet")
-
+        df.to_parquet(f"{output_path}/{current_shard:06d}.parquet")
+        step += 1
         ################ ONLY FOR EMBEDDINGS  / NUMPY ARRAYS ###################
         with open(f"{output_path}/{current_shard:06d}{npy_suffix}.npy", "wb") as f:
             npb = BytesIO()
@@ -193,7 +196,7 @@ def worker(current_shard):
 
         try:
             os.remove(f"{output_path}/{current_shard:06d}.parquet")
-            # os.remove(f"{output_path}/{current_shard:06d}{npy_suffix}.npy")
+            os.remove(f"{output_path}/{current_shard:06d}{npy_suffix}.npy")
             # os.remove(f'{output_path}/{current_shard:06d}_image_emb.npy')
         except Exception as e:
             print(e)
@@ -211,7 +214,7 @@ def worker(current_shard):
 
         try:
             with open("error_logs.txt", "a") as f:
-                f.write(f"Shard number {current_shard:06d}: " + str(e) + "\n")
+                f.write(f"Shard number {current_shard:06d}: - " + str(step) + " - " + str(e) + "\n")
         except Exception as e:
             print("Could not write error logs...")
             print(e)
